@@ -1,24 +1,28 @@
+import uuid
 from django.shortcuts import render
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from transactions.serializer import TransactionSerializer
 from usersinfo.models import Customer
 from .models import Transaction
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.status import (
+    HTTP_400_BAD_REQUEST,
+    HTTP_404_NOT_FOUND,
+    HTTP_200_OK
+)
 # Create your views here.
 
-class TransactionView(generics.RetrieveAPIView):
+class TransactionView(APIView):
     authentication_classes = [SessionAuthentication, BasicAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         # global serializer
-        token = self.request.headers.get('Authorization')
-        print("TOKEN::", token)
         try:
-            # token_obj = SMSVerification.objects.get(session_token=token)
-            # mobile = token_obj.phone_number
+            
             client = Customer.objects.get(user= request.user)
             send_money = Transaction.objects.filter(sender=client)
             rec_money = Transaction.objects.filter(receiver=client)
@@ -26,11 +30,27 @@ class TransactionView(generics.RetrieveAPIView):
             print(result)
             serializer = TransactionSerializer(result, many=True, required=False)
             return Response(serializer.data)
-        except:
-            return Response({"error": "not found"})
+        except Exception as e:
+            return Response({'error': str(e)}, status=HTTP_400_BAD_REQUEST)
 
-# class TestClass(APIView):
-#     authentication_classes = [SessionAuthentication, BasicAuthentication]
-#     permission_classes = [IsAuthenticated]
-#     def get(self, request):
-#         return Response({"message": "Hello World"})
+
+
+class SendMoney(APIView):
+    authentication_classes = [SessionAuthentication, BasicAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        try:
+            client = Customer.objects.get(user = request.user)
+            receiver = Customer.objects.get(phone = request.data['receiver'])
+            trn_id = uuid.uuid4().hex[:10].upper()
+            money_transfer = Transaction(sender=client, receiver=receiver, amount=request.data['amount'], tran_id=trn_id)
+            money_transfer.save()
+            client.balance = client.balance - float(request.data['amount'])
+            receiver.balance = receiver.balance + float(request.data['amount'])
+            client.save()
+            receiver.save()
+            return Response({"status": "success"}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)},
+                        status=HTTP_400_BAD_REQUEST)

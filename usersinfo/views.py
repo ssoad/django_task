@@ -11,6 +11,8 @@ from rest_framework.status import (
 from django.contrib.auth.models import User
 from rest_framework.response import Response
 
+from usersinfo.models import Customer
+
 # Create your views here.
 
 @csrf_exempt
@@ -38,14 +40,17 @@ def login(request):
 def register(request):
     username = request.data.get("username")
     email = request.data.get("email")
+    phone = request.data.get("phone")
     password = request.data.get("password")
     password2 = request.data.get("password2")
     if username is None or password is None or password2 is None or email is None:
         return Response({'error': 'Please provide both username and password'},
                         status=HTTP_400_BAD_REQUEST)
     try:
-        obj = User.objects.create_user(username=username, email=email, password=password)
-        obj.save()
+        user = User.objects.create_user(username=username, email=email, password=password)
+        user.save()
+        customer = Customer.objects.create(user=user, phone=phone)
+        customer.save()
         return Response({'success': 'User created successfully'},
                         status=HTTP_200_OK)
     except Exception as e:

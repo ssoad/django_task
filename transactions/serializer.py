@@ -1,8 +1,10 @@
 from rest_framework import serializers
+from .models import Transaction
+from usersinfo.serializer import CustomerSerializer
 
-class MoneyTransferSerializer(serializers.ModelSerializer):
+class TransactionSerializer(serializers.ModelSerializer):
     sender = CustomerSerializer(read_only=True)
 
     class Meta:
-        model = MoneyTransfer
+        model = Transaction
         fields = '__all__'

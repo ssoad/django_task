@@ -7,6 +7,7 @@ class Transaction(models.Model):
     sender = models.ForeignKey(Customer, to_field="user", on_delete=models.CASCADE, related_name="sender")
     receiver = models.ForeignKey(Customer, to_field="user", on_delete=models.CASCADE, related_name="receiver")
     amount = models.FloatField(null=False, blank=False)
+    tran_id = models.CharField(max_length=20, unique=True)
     datetime = models.DateTimeField(auto_now_add=True, blank=True)
 
     def __str__(self):
