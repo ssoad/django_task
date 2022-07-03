@@ -12,6 +12,7 @@ from django.contrib.auth.models import User
 from rest_framework.response import Response
 
 from usersinfo.models import Customer
+from usersinfo.serializer import CustomerSerializer, UserSerializer
 
 # Create your views here.
 
@@ -22,10 +23,12 @@ def login(request):
     username = request.data.get("username")
     password = request.data.get("password")
     if username is None or password is None:
+        print("empty fields")
         return Response({'error': 'Please provide both username and password'},
                         status=HTTP_400_BAD_REQUEST)
     user = authenticate(username=username, password=password)
     if not user:
+        print("Invalid Credentials")
         return Response({'error': 'Invalid Credentials'},
                         status=HTTP_404_NOT_FOUND)
     token, _ = Token.objects.get_or_create(user=user)
@@ -56,3 +59,17 @@ def register(request):
     except Exception as e:
         return Response({'error': str(e)},
                         status=HTTP_400_BAD_REQUEST)
+
+
+@csrf_exempt
+@api_view(["GET"])
+@permission_classes((AllowAny,))
+def get_user(request):
+    user = request.user
+    if not user.is_anonymous:
+        customer = Customer.objects.get(user=user)
+    else:    
+        return Response({'error': 'User not found'},
+                        status=HTTP_404_NOT_FOUND)
+    serializer = CustomerSerializer(customer)
+    return Response(serializer.data)

@@ -11,9 +11,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class CustomerSerializer(serializers.ModelSerializer):
-    # sender = UserSerializer(read_only=True)
-    # receiver = UserSerializer(read_only=True)
-
+    
     class Meta:
         model = Customer
-        fields = ['phone']
+        fields = '__all__'
